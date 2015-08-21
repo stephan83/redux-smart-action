@@ -1,6 +1,6 @@
 {
   "name": "redux-smart-action",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Actions can be smart, too!",
   "main": "lib/index.js",
   "scripts": {
@@ -54,5 +54,14 @@
   "dependencies": {
     "deep-equal": ">=1.0.0",
     "redux": ">=1.0.0-alpha"
-  }
+  },
+  "npmName": "redux-smart-action",
+  "npmFileMap": [
+    {
+      "basePath": "/dist/",
+      "files": [
+        "*.js"
+      ]
+    }
+  ]
 }
