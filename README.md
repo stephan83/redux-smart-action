@@ -42,7 +42,7 @@ a regular action:
 ```js
 import {SmartAction} from 'redux-smart-action';
 
-const push = value => new SmartAction(dispatch) => {
+const push = value => new SmartAction(dispatch => {
   dispatch({type: 'PUSH', value});
 });
 
