@@ -7,16 +7,18 @@ whether executing it would change the state, and a method to execute it.
 
 For instance, say you have a menu item with an enabled flag, then you can do:
 
-	// Assuming remove is an action that dispatches only if something can be
-	// removed
-	const deferredRemove = remove();
+```js
+// Assuming remove is an action that dispatches only if something can be
+// removed
+const deferredRemove = remove();
 
-	const menuItem = {
-	  enabled: deferredRemove.canExec,
-	  onClick: deferredRemove.exec
-	};
+const menuItem = {
+  enabled: deferredRemove.canExec,
+  onClick: deferredRemove.exec
+};
 
-	addMenuItem(menuItem);
+addMenuItem(menuItem);
+```
 
 They can do a lot more, like composing and mutiple dispatches.
 
@@ -28,24 +30,28 @@ elegant.
 
 ## Install
 
-	$ npm install redux-smart-action
+```
+$ npm install redux-smart-action
+```
 
 ## Actions
 
 To create a SmartAction, you must return a SmartAction instance from within
 a regular action:
 
-		import {SmartAction} from 'redux-smart-action';
+```js
+import {SmartAction} from 'redux-smart-action';
 
-		const push = value => new SmartAction(dispatch) => {
-		  dispatch({type: 'PUSH', value});
-		});
+const push = value => new SmartAction(dispatch) => {
+  dispatch({type: 'PUSH', value});
+});
 
-		const pop = () => new SmartAction((dispatch, getState) => {
-		  if (getState().length) {
-		    dispatch({type: 'POP'});
-		  }
-		});
+const pop = () => new SmartAction((dispatch, getState) => {
+  if (getState().length) {
+    dispatch({type: 'POP'});
+  }
+});
+```
 
 The SmartAction can make decisions based on the current state via `getState`
 and uses `dispatch` to dispatch actions. It can also dispatch other
@@ -53,10 +59,12 @@ SmartActions, allowing complex composing and reusability of actions.
 
 For instance:
 
-		// This action will push all given arguments
-		const pushMutiple = (...values) => new SmartAction(dispatch => {
-		  values.forEach(v => dispatch(push(v)).exec());
-		});
+```js
+// This action will push all given arguments
+const pushMutiple = (...values) => new SmartAction(dispatch => {
+  values.forEach(v => dispatch(push(v)).exec());
+});
+```
 
 It can call dispatch multiple times and the store's subscribers will only be
 notified once, or not at all if the state didn't change.
@@ -79,18 +87,20 @@ to use `applyMiddleware` at all.
 
 Example:
 
-		import {createStore} from 'redux';
-		import {applySmartMiddleware} from 'redux-smart-action';
+```js
+import {createStore} from 'redux';
+import {applySmartMiddleware} from 'redux-smart-action';
 
-		const createStoreWithMiddleware = applySmartMiddleware(
-		  smartActionMiddleware
-		)(createStore);
+const createStoreWithMiddleware = applySmartMiddleware(
+  smartActionMiddleware
+)(createStore);
 
-		function createSmartStore(initialState) {
-		  return createStoreWithMiddleware(reducer, initialState);
-		}
+function createSmartStore(initialState) {
+  return createStoreWithMiddleware(reducer, initialState);
+}
 
-		const store = createSmartStore();
+const store = createSmartStore();
+```
 
 ## Executing actions
 
@@ -100,14 +110,18 @@ the state) as well as a function to executed it.
 
 For instance:
 
-		store.dispach(push(1));
+```js
+store.dispach(push(1));
+```
 
 Returns an object:
 
-		{
-		  canExec: true, // True if the action would modify the state
-		  exec()         // Execute the action (does nothing if canExec is false)
-		}
+```js
+{
+  canExec: true, // True if the action would modify the state
+  exec()         // Execute the action (does nothing if canExec is false)
+}
+```
 
 It's up to you to decide whether you want to execute the action.
 
@@ -118,87 +132,106 @@ value of `canExec`, allowing interesting patterns.
 
 Given the reducer:
 
-		function reducer(state = [], action) {
-		  let nextState;
-		  switch (action.type) {
-		  case 'PUSH':
-		    nextState = state.slice();
-		    nextState.push(action.value);
-		    return nextState;
-		  case 'POP':
-		    nextState = state.slice();
-		    nextState.pop();
-		    return nextState;
-		  default:
-		    return state;
-		  }
-		}
+```js
+function reducer(state = [], action) {
+  let nextState;
+  switch (action.type) {
+  case 'PUSH':
+    nextState = state.slice();
+    nextState.push(action.value);
+    return nextState;
+  case 'POP':
+    nextState = state.slice();
+    nextState.pop();
+    return nextState;
+  default:
+    return state;
+  }
+}
+```
 
 Some actions:
 
-		const push = value => new SmartAction(dispatch => {
-		  dispatch({type: 'PUSH', value});
-		});
+```js
+const push = value => new SmartAction(dispatch => {
+  dispatch({type: 'PUSH', value});
+});
 
-		const pop = () => new SmartAction((dispatch, getState) => {
-		  if (getState().length) {
-		    dispatch({type: 'POP'});
-		  }
-		});
+const pop = () => new SmartAction((dispatch, getState) => {
+  if (getState().length) {
+    dispatch({type: 'POP'});
+  }
+});
+```
 
 And a store:
 
-		const createStoreWithMiddleware = applySmartMiddleware(
-		  smartActionMiddleware
-		)(createStore);
+```js
+const createStoreWithMiddleware = applySmartMiddleware(
+  smartActionMiddleware
+)(createStore);
 
-		function createSmartStore(initialState) {
-		  return createStoreWithMiddleware(reducer, initialState);
-		}
+function createSmartStore(initialState) {
+  return createStoreWithMiddleware(reducer, initialState);
+}
 
-		const store = createSmartStore();
+const store = createSmartStore();
+```
 
 #### Do something if an action executed:
 
-		if (store.dispach(pop()).exec()) {
-		  console.log('Pop executed!');
-		}
+```js
+if (store.dispach(pop()).exec()) {
+  console.log('Pop executed!');
+}
+```
 
 #### Do something if an action can execute but don't execute it:
 
-		if (store.dispach(pop()).canExec) {
-		  console.log('Pop can execute!');
-		}
+```js
+if (store.dispach(pop()).canExec) {
+  console.log('Pop can execute!');
+}
+```
+
 
 #### Do something if an action can execute then execute it
 
-		const pop = store.dispatch(pop());
+```js
+const pop = store.dispatch(pop());
 
-		if (pop.canExec) {
-		  console.log('Pop can execute!');
-		  pop.exec();
-		  console.log('Pop executed!');
-		}
+if (pop.canExec) {
+  console.log('Pop can execute!');
+  pop.exec();
+  console.log('Pop executed!');
+}
+```
 
 #### Execute an action if another didn't execute
 
-		// This will pop if it can, or push if it didn't pop
-		store.dispach(pop()).exec() || store.dispach(push(1)).exec();
+```js
+// This will pop if it can, or push if it didn't pop
+store.dispach(pop()).exec() || store.dispach(push(1)).exec();
+```
 
 #### Execute an action if another executed
 
-		// This will pop if it can, then push if it popped
-		store.dispach(pop()).exec() && store.dispach(push(1)).exec();
+```js
+// This will pop if it can, then push if it popped
+store.dispach(pop()).exec() && store.dispach(push(1)).exec();
+```
 
 #### Compose actions
 
-		// This action will push all given arguments
-		const pushMutiple = (...values) => new SmartAction(dispatch => {
-		  values.forEach(v => dispatch(push(v)).exec());
-		});
+```js
+// This action will push all given arguments
+const pushMutiple = (...values) => new SmartAction(dispatch => {
+  values.forEach(v => dispatch(push(v)).exec());
+});
 
-		store.dispatch(pushMultiple(1, 3, 4)).exec();
-		console.log(store.getState()); // [ 1, 2, 3 ]
+store.dispatch(pushMultiple(1, 3, 4)).exec();
+console.log(store.getState()); // [ 1, 2, 3 ]
+```
 
 ## Limitations
 
@@ -209,10 +242,12 @@ hasn't change in the mean time.
 
 For instance, **DON'T DO THIS**:
 
-		push(1).exec();
-		const deferPop = pop();
-		pop().exec();
-		deferPop.exec();
+```js
+push(1).exec();
+const deferPop = pop();
+pop().exec();
+deferPop.exec();
+```
 
 ### Async
 
@@ -220,13 +255,3 @@ Obviously, it is not possible to know if an action will dispatch in the future!
 
 However, I have a feeling something can be done with promises. I'll get to it
 once that thought materializes...
-
-## License
-
-Copyright (c) 2015 Stephan Florquin
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
