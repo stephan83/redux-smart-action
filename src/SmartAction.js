@@ -7,19 +7,19 @@ export default class SmartAction {
     this.deepEqual = deepEqual;
   }
 
-  dispatchToStore(store) {
-    const prevState = store.getState();
+  run(dispatch, getState) {
+    const prevState = getState();
 
-    this.func(store.dispatch, store.getState);
+    this.func(dispatch, getState);
 
-    const nextState = store.getState();
+    const nextState = getState();
 
     if (prevState === nextState) {
       return false;
     }
 
     if (this.deepEqual) {
-      return !equal(prevState, store.getState());
+      return !equal(prevState, getState());
     }
 
     return true;

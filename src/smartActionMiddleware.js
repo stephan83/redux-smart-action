@@ -5,7 +5,7 @@ export default function createSmartActionMiddleware(store) {
     if (action instanceof SmartAction) {
       const branch = store.branch();
 
-      if (action.dispatchToStore(branch)) {
+      if (action.run(branch.dispatch, branch.getState)) {
         return {
           canExec: true,
           exec: () => {
