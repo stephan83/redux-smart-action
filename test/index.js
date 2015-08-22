@@ -93,7 +93,7 @@ const pushTimes = (value, times) => new SmartAction((dispatch, getState) => {
   }
 });
 
-describe('smartAction', () => {
+describe('redux-smart-action', () => {
 
   let store;
   let action;
