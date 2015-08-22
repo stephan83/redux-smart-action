@@ -20,7 +20,19 @@ const menuItem = {
 addMenuItem(menuItem);
 ```
 
-They can do a lot more, like composing and mutiple dispatches.
+They can do a lot more, like composing and mutiple dispatches. For instance,
+you can define actions such as these:
+
+```js
+const push = value => new SmartAction(dispatch => {
+  dispatch({type: 'PUSH', value});
+});
+
+// This will only notify the subscribers once!
+const pushMutiple = (...values) => new SmartAction(dispatch => {
+  values.forEach(v => dispatch(push(v)).exec());
+});
+```
 
 In some ways, SmartAction moves some business logic from reducers to actions.
 This may not be everyone's cup of tea, but I personally like it because
@@ -69,10 +81,55 @@ const pushMutiple = (...values) => new SmartAction(dispatch => {
 It can call dispatch multiple times and the store's subscribers will only be
 notified once, or not at all if the state didn't change.
 
-It uses `deep-equal` to check if the state changed, so if `dispatch` is called
-with values canceling each other, the state will not update and the subscribers
-won't be notified. If you don't want to use deep-equal to compare, pass `false`
-as the second argument to the constructor of `SmartAction`.
+### Options
+
+The constructor expects the following parameters:
+
+```js
+new SmartAction(func, branch = true, deepEqual = true);
+```
+
+#### branch
+
+If not specified, `branch` is set to `true`. If `branch` is `true`, calling an
+action will create a temporary store, `dispatch` and `getState` are wired to
+that temporary store. When `exec` is called, if the state of the temporary store
+had changed, the state of the original store is replaced by the state of the
+temporary store. This is the safest option because, whenever an action calls
+`getState`, it gets a state which includes any previous mutations by the action.
+
+For instance, this is perfectly safe to do if `branch` is `true`:
+
+```js
+const pushTimes = (value, times) => new SmartAction((dispatch, getState) => {
+  const initialLength = getState().length;
+  while (getState().length < initialLength + times) {
+    dispatch(push(value)).exec();
+  }
+});
+```
+
+The down side is that a temporary store is created, so it uses memory.
+
+On the other hand, if `branch` is set to `false`, a temporary store is not
+created so it is more memory efficient. However in this case it is not safe
+to `getState` because it doesn't include any previous mutations by the action.
+With `branch` set to `false`, the previous example would run into an infinite
+loop!
+Usually, when `branch` is set to `false`, `getState` should only be called once
+at the beginning of the action before it starts calling `dispatch`.
+
+#### deepEqual
+
+If not specified, `deepEqual` is set to `true`. It is only relevant when
+`branch` is `true`. If `deepEqual` is `true`, `deep-equal` is used to check if
+the state changed, so if `dispatch` is called with values canceling each other,
+the state will not update and the subscribers won't be notified. This is a nice
+feature but can be a little expensive.
+
+On the other hand, if `branch` is `false`, a strict equality is used to compare
+the previous state to the next state. This is must faster, but subscribers can
+be notified even if the final state is the same as the original.
 
 ## Middleware
 
