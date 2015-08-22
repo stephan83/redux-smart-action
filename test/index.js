@@ -34,11 +34,21 @@ const push = value => new SmartAction(dispatch => {
   dispatch({type: 'PUSH', value});
 });
 
+const pushNoBranch = value => new SmartAction(dispatch => {
+  dispatch({type: 'PUSH', value});
+}, false);
+
 const pop = value => new SmartAction((dispatch, getState) => {
   if (getState().length) {
     dispatch({type: 'POP', value});
   }
 });
+
+const popNoBranch = value => new SmartAction((dispatch, getState) => {
+  if (getState().length) {
+    dispatch({type: 'POP', value});
+  }
+}, false);
 
 const pushCap = (value, cap) => new SmartAction((dispatch, getState) => {
   if (getState().length < cap) {
@@ -46,19 +56,42 @@ const pushCap = (value, cap) => new SmartAction((dispatch, getState) => {
   }
 });
 
+const pushCapNoBranch = (value, cap) =>
+  new SmartAction((dispatch, getState) => {
+    if (getState().length < cap) {
+      dispatch(pushNoBranch(value)).exec();
+    }
+  }, false);
+
 const pushMutiple = (...values) => new SmartAction(dispatch => {
   values.forEach(v => dispatch(push(v)).exec());
 });
+
+const pushMutipleNoBranch = (...values) => new SmartAction(dispatch => {
+  values.forEach(v => dispatch(pushNoBranch(v)).exec());
+}, false);
 
 const pushPop = value => new SmartAction(dispatch => {
   dispatch({type: 'PUSH', value});
   dispatch({type: 'POP', value});
 });
 
+const pushPopNoBranch = value => new SmartAction(dispatch => {
+  dispatch({type: 'PUSH', value});
+  dispatch({type: 'POP', value});
+}, false);
+
 const pushPopNoDeepEqual = value => new SmartAction(dispatch => {
   dispatch({type: 'PUSH', value});
   dispatch({type: 'POP'});
-}, false);
+}, false, false);
+
+const pushTimes = (value, times) => new SmartAction((dispatch, getState) => {
+  const initialLength = getState().length;
+  while (getState().length < initialLength + times) {
+    dispatch(push(value)).exec();
+  }
+});
 
 describe('smartAction', () => {
 
@@ -81,37 +114,57 @@ describe('smartAction', () => {
 
     context('the state would change', () => {
 
-      beforeEach(() => {
-        action = store.dispatch(push(1));
-      });
+      const tests = () => {
 
-      describe('canExec', () => {
+        describe('canExec', () => {
 
-        it('should return true', () => {
-          action.canExec.should.be.exactly(true);
+          it('should return true', () => {
+            action.canExec.should.be.exactly(true);
+          });
+
         });
 
-      });
+        describe('#exec()', () => {
 
-      describe('#exec()', () => {
+          let returnValue;
 
-        let returnValue;
+          beforeEach(() => {
+            returnValue = action.exec();
+          });
+
+          it('should return true', () => {
+            returnValue.should.be.exactly(true);
+          });
+
+          it('should update the state', () => {
+            store.getState().length.should.be.exactly(1);
+          });
+
+          it('should notify observers', () => {
+            observer.calledOnce.should.be.exactly(true);
+          });
+
+        });
+
+      };
+
+      context('with branch', () => {
 
         beforeEach(() => {
-          returnValue = action.exec();
+          action = store.dispatch(push(1));
         });
 
-        it('should return true', () => {
-          returnValue.should.be.exactly(true);
+        tests();
+
+      });
+
+      context('without branch', () => {
+
+        beforeEach(() => {
+          action = store.dispatch(pushNoBranch(1));
         });
 
-        it('should update the state', () => {
-          store.getState().length.should.be.exactly(1);
-        });
-
-        it('should notify observers', () => {
-          observer.calledOnce.should.be.exactly(true);
-        });
+        tests();
 
       });
 
@@ -119,37 +172,57 @@ describe('smartAction', () => {
 
     context('the state wouldn\'t change', () => {
 
-      beforeEach(() => {
-        action = store.dispatch(pop());
-      });
+      const tests = () => {
 
-      describe('canExec', () => {
+        describe('canExec', () => {
 
-        it('should return false', () => {
-          action.canExec.should.be.exactly(false);
+          it('should return false', () => {
+            action.canExec.should.be.exactly(false);
+          });
+
         });
 
-      });
+        describe('#exec()', () => {
 
-      describe('#exec()', () => {
+          let returnValue;
 
-        let returnValue;
+          beforeEach(() => {
+            returnValue = action.exec();
+          });
+
+          it('should return false', () => {
+            returnValue.should.be.exactly(false);
+          });
+
+          it('should not update the state', () => {
+            store.getState().length.should.be.exactly(0);
+          });
+
+          it('should not notify observers', () => {
+            observer.called.should.be.exactly(false);
+          });
+
+        });
+
+      };
+
+      context('with branch', () => {
 
         beforeEach(() => {
-          returnValue = action.exec();
+          action = store.dispatch(pop());
         });
 
-        it('should return false', () => {
-          returnValue.should.be.exactly(false);
+        tests();
+
+      });
+
+      context('without branch', () => {
+
+        beforeEach(() => {
+          action = store.dispatch(popNoBranch());
         });
 
-        it('should not update the state', () => {
-          store.getState().length.should.be.exactly(0);
-        });
-
-        it('should not notify observers', () => {
-          observer.called.should.be.exactly(false);
-        });
+        tests();
 
       });
 
@@ -161,37 +234,57 @@ describe('smartAction', () => {
 
     context('the state would change', () => {
 
-      beforeEach(() => {
-        action = store.dispatch(pushCap(1, 1));
-      });
+      const tests = () => {
 
-      describe('canExec', () => {
+        describe('canExec', () => {
 
-        it('should return true', () => {
-          action.canExec.should.be.exactly(true);
+          it('should return true', () => {
+            action.canExec.should.be.exactly(true);
+          });
+
         });
 
-      });
+        describe('#exec()', () => {
 
-      describe('#exec()', () => {
+          let returnValue;
 
-        let returnValue;
+          beforeEach(() => {
+            returnValue = action.exec();
+          });
+
+          it('should return true', () => {
+            returnValue.should.be.exactly(true);
+          });
+
+          it('should update the state', () => {
+            store.getState().length.should.be.exactly(1);
+          });
+
+          it('should notify observers', () => {
+            observer.calledOnce.should.be.exactly(true);
+          });
+
+        });
+
+      };
+
+      context('with branch', () => {
 
         beforeEach(() => {
-          returnValue = action.exec();
+          action = store.dispatch(pushCap(1, 1));
         });
 
-        it('should return true', () => {
-          returnValue.should.be.exactly(true);
+        tests();
+
+      });
+
+      context('without branch', () => {
+
+        beforeEach(() => {
+          action = store.dispatch(pushCapNoBranch(1, 1));
         });
 
-        it('should update the state', () => {
-          store.getState().length.should.be.exactly(1);
-        });
-
-        it('should notify observers', () => {
-          observer.calledOnce.should.be.exactly(true);
-        });
+        tests();
 
       });
 
@@ -199,37 +292,57 @@ describe('smartAction', () => {
 
     context('the state wouldn\'t change', () => {
 
-      beforeEach(() => {
-        action = store.dispatch(pushCap(1, 0));
-      });
+      const tests = () => {
 
-      describe('canExec', () => {
+        describe('canExec', () => {
 
-        it('should return false', () => {
-          action.canExec.should.be.exactly(false);
+          it('should return false', () => {
+            action.canExec.should.be.exactly(false);
+          });
+
         });
 
-      });
+        describe('#exec()', () => {
 
-      describe('#exec()', () => {
+          let returnValue;
 
-        let returnValue;
+          beforeEach(() => {
+            returnValue = action.exec();
+          });
+
+          it('should return false', () => {
+            returnValue.should.be.exactly(false);
+          });
+
+          it('should not update the state', () => {
+            store.getState().length.should.be.exactly(0);
+          });
+
+          it('should not notify observers', () => {
+            observer.called.should.be.exactly(false);
+          });
+
+        });
+
+      };
+
+      context('with branch', () => {
 
         beforeEach(() => {
-          returnValue = action.exec();
+          action = store.dispatch(pushCap(1, 0));
         });
 
-        it('should return false', () => {
-          returnValue.should.be.exactly(false);
+        tests();
+
+      });
+
+      context('without branch', () => {
+
+        beforeEach(() => {
+          action = store.dispatch(pushCapNoBranch(1, 0));
         });
 
-        it('should not update the state', () => {
-          store.getState().length.should.be.exactly(0);
-        });
-
-        it('should not notify observers', () => {
-          observer.called.should.be.exactly(false);
-        });
+        tests();
 
       });
 
@@ -241,37 +354,55 @@ describe('smartAction', () => {
 
     context('the state would change', () => {
 
-      beforeEach(() => {
-        action = store.dispatch(pushMutiple(1, 2, 3));
-      });
+      const tests = () => {
+        describe('canExec', () => {
 
-      describe('canExec', () => {
+          it('should return true', () => {
+            action.canExec.should.be.exactly(true);
+          });
 
-        it('should return true', () => {
-          action.canExec.should.be.exactly(true);
         });
 
-      });
+        describe('#exec()', () => {
 
-      describe('#exec()', () => {
+          let returnValue;
 
-        let returnValue;
+          beforeEach(() => {
+            returnValue = action.exec();
+          });
+
+          it('should return true', () => {
+            returnValue.should.be.exactly(true);
+          });
+
+          it('should update the state', () => {
+            store.getState().length.should.be.exactly(3);
+          });
+
+          it('should notify observers', () => {
+            observer.calledOnce.should.be.exactly(true);
+          });
+
+        });
+      };
+
+      context('with branch', () => {
 
         beforeEach(() => {
-          returnValue = action.exec();
+          action = store.dispatch(pushMutiple(1, 2, 3));
         });
 
-        it('should return true', () => {
-          returnValue.should.be.exactly(true);
+        tests();
+
+      });
+
+      context('without branch', () => {
+
+        beforeEach(() => {
+          action = store.dispatch(pushMutipleNoBranch(1, 2, 3));
         });
 
-        it('should update the state', () => {
-          store.getState().length.should.be.exactly(3);
-        });
-
-        it('should notify observers', () => {
-          observer.calledOnce.should.be.exactly(true);
-        });
+        tests();
 
       });
 
@@ -279,37 +410,57 @@ describe('smartAction', () => {
 
     context('the state wouldn\'t change', () => {
 
-      beforeEach(() => {
-        action = store.dispatch(pushMutiple());
-      });
+      const tests = () => {
 
-      describe('canExec', () => {
+        describe('canExec', () => {
 
-        it('should return false', () => {
-          action.canExec.should.be.exactly(false);
+          it('should return false', () => {
+            action.canExec.should.be.exactly(false);
+          });
+
         });
 
-      });
+        describe('#exec()', () => {
 
-      describe('#exec()', () => {
+          let returnValue;
 
-        let returnValue;
+          beforeEach(() => {
+            returnValue = action.exec();
+          });
+
+          it('should return false', () => {
+            returnValue.should.be.exactly(false);
+          });
+
+          it('should not update the state', () => {
+            store.getState().length.should.be.exactly(0);
+          });
+
+          it('should not notify observers', () => {
+            observer.called.should.be.exactly(false);
+          });
+
+        });
+
+      };
+
+      context('with branch', () => {
 
         beforeEach(() => {
-          returnValue = action.exec();
+          action = store.dispatch(pushMutiple());
         });
 
-        it('should return false', () => {
-          returnValue.should.be.exactly(false);
+        tests();
+
+      });
+
+      context('without branch', () => {
+
+        beforeEach(() => {
+          action = store.dispatch(pushMutipleNoBranch());
         });
 
-        it('should not update the state', () => {
-          store.getState().length.should.be.exactly(0);
-        });
-
-        it('should not notify observers', () => {
-          observer.called.should.be.exactly(false);
-        });
+        tests();
 
       });
 
@@ -319,7 +470,7 @@ describe('smartAction', () => {
 
   context('mutltiple dispatches canceling each other', () => {
 
-    context('with deepEqual', () => {
+    context('with branch and deepEqual', () => {
 
       beforeEach(() => {
         action = store.dispatch(pushPop(1));
@@ -347,6 +498,40 @@ describe('smartAction', () => {
 
         it('should not notify observers', () => {
           observer.called.should.be.exactly(false);
+        });
+
+      });
+
+    });
+
+    context('without branch', () => {
+
+      beforeEach(() => {
+        action = store.dispatch(pushPopNoBranch(1));
+      });
+
+      describe('canExec', () => {
+
+        it('should return true', () => {
+          action.canExec.should.be.exactly(true);
+        });
+
+      });
+
+      describe('#exec()', () => {
+
+        let returnValue;
+
+        beforeEach(() => {
+          returnValue = action.exec();
+        });
+
+        it('should return true', () => {
+          returnValue.should.be.exactly(true);
+        });
+
+        it('should notify observers', () => {
+          observer.calledOnce.should.be.exactly(true);
         });
 
       });
@@ -381,6 +566,60 @@ describe('smartAction', () => {
 
         it('should notify observers', () => {
           observer.calledOnce.should.be.exactly(true);
+        });
+
+      });
+
+    });
+
+  });
+
+  context('actions mutating the state and reading it', () => {
+
+    context('with branch', () => {
+
+      beforeEach(() => {
+        action = store.dispatch(pushTimes(1, 5));
+      });
+
+      describe('canExec', () => {
+
+        it('should return true', () => {
+          action.canExec.should.be.exactly(true);
+        });
+
+      });
+
+      describe('#exec()', () => {
+
+        let returnValue;
+
+        beforeEach(() => {
+          returnValue = action.exec();
+        });
+
+        it('should work', () => {
+          store.getState().length.should.be.exactly(5);
+        });
+
+        it('should return true', () => {
+          returnValue.should.be.exactly(true);
+        });
+
+        it('should not notify observers', () => {
+          observer.called.should.be.exactly(true);
+        });
+
+      });
+
+    });
+
+    context('without branch', () => {
+
+      describe('canExec', () => {
+
+        it('it would run into an infinite loop!', () => {
+          (true).should.be.exactly(true);
         });
 
       });

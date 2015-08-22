@@ -49,7 +49,9 @@ export default function applySmartMiddleware(...middlewares) {
         replaceState: (state) => {
           dispatch({type: REPLACE, state});
         },
-        branch: () => middlewareReducer(reducer, store.getState())
+        branch: (withReducer = reducer) => {
+          return middlewareReducer(withReducer, store.getState());
+        }
       };
 
       chain = middlewares.map(middleware => middleware(middlewareAPI));
