@@ -55,7 +55,7 @@ export default function applySmartMiddleware(...middlewares) {
       };
 
       chain = middlewares.map(middleware => middleware(middlewareAPI));
-      dispatch = compose(...chain, store.dispatch);
+      dispatch = compose(...chain)(store.dispatch);
 
       return {
         ...store,
