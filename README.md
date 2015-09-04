@@ -127,9 +127,9 @@ the state changed, so if `dispatch` is called with values canceling each other,
 the state will not update and the subscribers won't be notified. This is a nice
 feature but can be a little expensive.
 
-On the other hand, if `branch` is `false`, a strict equality is used to compare
-the previous state to the next state. This is must faster, but subscribers can
-be notified even if the final state is the same as the original.
+On the other hand, if `deepEquasl` is `false`, a strict equality is used to
+compare the previous state to the next state. This is must faster, but
+subscribers can be notified even if the final state is the same as the original.
 
 ## Middleware
 
