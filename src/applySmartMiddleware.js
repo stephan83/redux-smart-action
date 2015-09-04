@@ -31,7 +31,7 @@ const REPLACE = '@@smartAction/REPLACE';
 
 export default function applySmartMiddleware(...middlewares) {
   return (next) => {
-    const middlewareReducer = (r, initialState) => {
+    const handleNext = (r, initialState) => {
       const reducer = (state, action) => {
         if (action.type === REPLACE) {
           return action.state;
@@ -50,7 +50,7 @@ export default function applySmartMiddleware(...middlewares) {
           dispatch({type: REPLACE, state});
         },
         branch: (withReducer = reducer) => {
-          return middlewareReducer(withReducer, store.getState());
+          return handleNext(withReducer, store.getState());
         }
       };
 
@@ -63,6 +63,6 @@ export default function applySmartMiddleware(...middlewares) {
       };
     };
 
-    return middlewareReducer;
+    return handleNext;
   };
 }
